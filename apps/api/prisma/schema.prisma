@@ -1,0 +1,73 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+model Company {
+ id String @id @default(cuid())
+ name String
+ address String?
+ email String?
+ phone String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ customers Customer[]
+ products Product[]
+ invoices Invoice[]
+}
+model Customer {
+ id String @id @default(cuid())
+ companyId String
+ name String
+ address String?
+ email String?
+ phone String?
+ createdAt DateTime @default(now())
+ company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+ invoices Invoice[]
+ @@index([companyId, name])
+}
+model Product {
+ id String @id @default(cuid())
+ companyId String
+ name String
+ sku String?
+ unit String @default("each")
+ unitPrice Decimal @db.Decimal(12, 2)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+ @@index([companyId, name])
+}
+model Invoice {
+ id String @id @default(cuid())
+ companyId String
+ invoiceNumber String
+ issueDate DateTime
+ customerName String
+ customerAddress String?
+ companyName String
+ companyAddress String?
+ companyEmail String?
+ companyPhone String?
+ currency String @default("USD")
+ taxRate Decimal @db.Decimal(5, 2)
+ subtotalCents Int
+ taxCents Int
+ totalCents Int
+ status String @default("DRAFT")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+ items InvoiceItem[]
+ @@unique([companyId, invoiceNumber])
+ @@index([companyId, issueDate])
+}
+model InvoiceItem {
+ id String @id @default(cuid())
+ invoiceId String
+ productName String
+ unit String
+ unitPriceCents Int
+ quantity Int
+ lineTotalCents Int
+ invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+ @@index([invoiceId])
+}
